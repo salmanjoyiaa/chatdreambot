@@ -54,6 +54,7 @@ const FIELD_TO_COLUMNS = {
   guest_fav: ["Guest Fav?"],
   airbnb_rating: ["Airbnb Rating"],
   address: ["Address"],
+  area: ["Property By Area", "Area", "Location Area"],
 };
 
 async function loadSheet() {
@@ -679,6 +680,91 @@ async function handleDatasetQuery(extracted) {
       return `Here are the **${extracted.datasetValue}** properties:\n\n${list}`;
     }
 
+    case "list_all_areas": {
+      const areaCol = findColumnIndex(headers, "Property By Area");
+      if (areaCol === -1) {
+        return "I don't have area information in my records.";
+      }
+      const areasSet = new Set();
+      for (const rec of records) {
+        const area = rec[headers[areaCol]];
+        if (area && String(area).trim()) {
+          areasSet.add(String(area).trim());
+        }
+      }
+      if (areasSet.size === 0) {
+        return "I don't have any area information listed in my records.";
+      }
+      const areas = Array.from(areasSet).sort();
+      const list = areas.map((a) => `• ${a}`).join("\n");
+      return `Here are all the areas where we have properties:\n\n${list}\n\nWould you like to know which properties are in a specific area?`;
+    }
+
+    case "properties_in_area": {
+      if (!extracted.datasetValue) {
+        return "Which area would you like to explore? (e.g., Casa Grande, Arizona or Las Vegas, Nevada)";
+      }
+      const areaCol = findColumnIndex(headers, "Property By Area");
+      if (areaCol === -1) {
+        return "I don't have area information in my records.";
+      }
+      const searchArea = String(extracted.datasetValue).toLowerCase().trim();
+      const properties = records
+        .filter((rec) => {
+          const area = String(rec[headers[areaCol]] || "").toLowerCase();
+          return area.includes(searchArea) || searchArea.includes(area);
+        })
+        .map((rec) => {
+          const unit = rec["Unit #"] || "";
+          const title = rec["Title on Listing's Site"] || "";
+          const area = rec[headers[areaCol]] || "";
+          const display = unit && title ? `Unit ${unit} – ${title}` : (unit || title || "(Unnamed)");
+          return `${display} (${area})`;
+        });
+      if (properties.length === 0) {
+        return `I don't have any properties in "${extracted.datasetValue}". Would you like to see all available areas?`;
+      }
+      const list = properties.map((p) => `• ${p}`).join("\n");
+      return `Here are the properties in **${extracted.datasetValue}**:\n\n${list}`;
+    }
+
+    case "properties_near_each_other": {
+      const areaCol = findColumnIndex(headers, "Property By Area");
+      if (areaCol === -1) {
+        return "I don't have area information in my records.";
+      }
+      const propertiesByArea = {};
+      for (const rec of records) {
+        const area = rec[headers[areaCol]];
+        if (!area || !String(area).trim()) continue;
+        const areaKey = String(area).trim();
+        if (!propertiesByArea[areaKey]) {
+          propertiesByArea[areaKey] = [];
+        }
+        const unit = rec["Unit #"] || "";
+        const title = rec["Title on Listing's Site"] || "";
+        const display = unit && title ? `Unit ${unit} – ${title}` : (unit || title || "(Unnamed)");
+        propertiesByArea[areaKey].push(display);
+      }
+      
+      // Filter to areas with multiple properties (properties near each other)
+      const nearbyAreas = Object.entries(propertiesByArea)
+        .filter(([_, props]) => props.length > 1)
+        .sort((a, b) => b[1].length - a[1].length);
+
+      if (nearbyAreas.length === 0) {
+        return "I don't have any properties that are near each other (same area) in my records.";
+      }
+
+      let response = "Here are properties grouped by area (properties near each other):\n\n";
+      for (const [area, props] of nearbyAreas) {
+        response += `**${area}** (${props.length} properties):\n`;
+        response += props.map((p) => `• ${p}`).join("\n");
+        response += "\n\n";
+      }
+      return response.trim();
+    }
+
     default:
       return "I understand you're asking about our property data, but I haven't been trained to answer that specific type of question yet.";
   }
@@ -728,6 +814,7 @@ function formatResponse(propertyName, fieldType, value) {
     guest_fav: "Guest-favorite status",
     airbnb_rating: "Airbnb rating",
     address: "The address is",
+    area: "Area location",
   };
 
   const phrase = friendly[fieldType] || "Here is the information you asked for";

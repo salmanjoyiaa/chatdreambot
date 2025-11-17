@@ -47,6 +47,9 @@ DATASET QUERY TYPES (set datasetIntentType to one of these):
 - "properties_with_wifi_speed_above": "Properties with WiFi faster than X Mbps?"
 - "properties_by_style": "Which property is a mansion?" OR "Properties with mansion style?" OR "Which properties are [style]?"
 - "properties_by_type": "Which properties are [type]?" OR "Show me [type] properties"
+- "list_all_areas": "Show all areas where properties are located" OR "What areas do you have properties in?"
+- "properties_in_area": "Which properties are in [area]?" OR "Properties in [city, state]?"
+- "properties_near_each_other": "Which properties are near to each other?" OR "Properties close to each other?"
 
 FOR DATASET QUERIES:
 - Set "datasetOwnerName" if the user mentions an owner name
@@ -70,6 +73,18 @@ User: "Which property is a mansion?"
 
 User: "Which properties are mansion style?"
 → intent: "dataset_query", datasetIntentType: "properties_by_style", datasetValue: "mansion"
+
+User: "Show all areas where properties are located"
+→ intent: "dataset_query", datasetIntentType: "list_all_areas"
+
+User: "Which properties are in Casa Grande, Arizona?"
+→ intent: "dataset_query", datasetIntentType: "properties_in_area", datasetValue: "Casa Grande, Arizona"
+
+User: "Properties in Las Vegas?"
+→ intent: "dataset_query", datasetIntentType: "properties_in_area", datasetValue: "Las Vegas"
+
+User: "Which properties are near each other?"
+→ intent: "dataset_query", datasetIntentType: "properties_near_each_other"
 
 User: "Hi there!"
 → intent: "greeting"
