@@ -62,9 +62,7 @@ export default function StreamingMessage({ text, role = 'bot', timestamp, onComp
                 <path d="M20 5H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h12v14z" />
               </svg>
             </button>
-            {copied && (
-              <div className="absolute -right-2 top-10 whitespace-nowrap bg-black text-white text-xs rounded-md px-2 py-1 shadow-lg">Copied</div>
-            )}
+            {/* inline copied tooltip removed in favor of global toast */}
           </div>
 
           {onRetry && (
