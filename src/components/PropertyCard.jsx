@@ -61,24 +61,24 @@ export default function PropertyCard({ property, onQuickAction }) {
         <div className="flex flex-col sm:flex-row gap-2 mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
           <button
             onClick={() => onQuickAction(`What's the WiFi password at ${info.unit ? `Unit ${info.unit}` : info.title}?`)}
-            className="flex-1 px-3 py-2 text-xs font-medium bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg transition-colors whitespace-nowrap overflow-hidden text-ellipsis"
+            className="flex-1 px-3 py-2 text-xs font-medium bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg transition-colors"
             title="📶 WiFi Info"
           >
             📶 WiFi Info
           </button>
           <button
             onClick={() => onQuickAction(`Does ${info.unit ? `Unit ${info.unit}` : info.title} have parking?`)}
-            className="flex-1 px-3 py-2 text-xs font-medium bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg transition-colors whitespace-nowrap overflow-hidden text-ellipsis"
+            className="flex-1 px-3 py-2 text-xs font-medium bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg transition-colors"
             title="🚗 Parking"
           >
             🚗 Parking
           </button>
           <button
             onClick={() => onQuickAction(`Tell me more about ${info.unit ? `Unit ${info.unit}` : info.title}`)}
-            className="flex-1 px-3 py-2 text-xs font-medium bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg transition-colors whitespace-nowrap overflow-hidden text-ellipsis"
-            title="ℹ️ Details"
+            className="flex-1 px-3 py-2 text-xs font-medium bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg transition-colors"
+            title="ℹ️ More Details"
           >
-            ℹ️ Details
+            ℹ️ More Details
           </button>
         </div>
       )}

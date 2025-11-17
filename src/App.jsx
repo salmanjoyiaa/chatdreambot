@@ -15,7 +15,7 @@ import useSmartSuggestions from './hooks/useSmartSuggestions'
 export default function App() {
 const { messages, sendMessage, isLoading, error } = useChat()
 const listRef = useRef(null)
-useAutoScroll(listRef, [messages, isLoading])
+useAutoScroll(listRef, [messages, isLoading], isLoading || messages.length > 0)
 const [isDark, toggleDark] = useDarkMode()
 const [currentIntent, setCurrentIntent] = useState(null)
 const smartSuggestions = useSmartSuggestions(messages, currentIntent)
