@@ -1,12 +1,8 @@
-import { motion } from 'framer-motion'
-
 export default function DarkModeToggle({ isDark, onToggle }) {
   return (
-    <motion.button
+    <button
       onClick={onToggle}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      className="p-2 rounded-lg bg-white/10 dark:bg-slate-700/50 hover:bg-white/20 dark:hover:bg-slate-600/50 transition-colors backdrop-blur-sm"
+      className="p-2 rounded-lg bg-white/10 dark:bg-slate-700/50 hover:bg-white/20 dark:hover:bg-slate-600/50 transition-all duration-200 active:scale-95 backdrop-blur-sm"
       aria-label="Toggle dark mode"
     >
       {isDark ? (
@@ -18,7 +14,7 @@ export default function DarkModeToggle({ isDark, onToggle }) {
           <path fillRule="evenodd" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 01.818.162z" clipRule="evenodd" />
         </svg>
       )}
-    </motion.button>
+    </button>
   )
 }
 

@@ -82,7 +82,7 @@ export default function PropertyCard({ property, onQuickAction }) {
           </button>
         </div>
       )}
-    </motion.div>
+    </div>
   )
 }
 
