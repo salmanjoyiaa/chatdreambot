@@ -229,6 +229,34 @@ function makeRecords(rows, headers) {
   });
 }
 
+function extractPropertyDetails(record, headers) {
+  const unit = record["Unit #"] || "";
+  const title = record["Title on Listing's Site"] || "";
+  const price = record[headers[findColumnIndex(headers, "Price")]] || "";
+  const type = record[headers[findColumnIndex(headers, "Type")]] || "";
+  const bedBath = record[headers[findColumnIndex(headers, "Bed x Bath")]] || "";
+  const maxGuests = record[headers[findColumnIndex(headers, "Max Guests")]] || "";
+  const rating = record[headers[findColumnIndex(headers, "Airbnb Rating")]] || "";
+  const poolCol = findColumnIndex(headers, "Pool and Hot tube");
+  const cameraCol = findColumnIndex(headers, "Camera Location");
+  const hasPool = poolCol !== -1 && record[headers[poolCol]] && String(record[headers[poolCol]]).trim() !== "";
+  const hasCamera = cameraCol !== -1 && record[headers[cameraCol]] && String(record[headers[cameraCol]]).trim() !== "";
+  const hasWifi = record[headers[findColumnIndex(headers, "Wifi Login")]] && String(record[headers[findColumnIndex(headers, "Wifi Login")]]).trim() !== "";
+
+  return {
+    unit: String(unit).trim(),
+    title: String(title).trim(),
+    price: String(price).replace(/[^\d.]/g, "").trim(),
+    type: String(type).toLowerCase().trim(),
+    bedBath: String(bedBath).trim(),
+    maxGuests: String(maxGuests).trim(),
+    rating: String(rating).trim(),
+    hasPool,
+    hasCamera,
+    hasWifi,
+  };
+}
+
 async function handlePropertyQuery(extracted) {
   const { propertyName, fieldType, informationToFind } = extracted;
 
@@ -685,19 +713,29 @@ async function handleDatasetQuery(extracted) {
       if (areaCol === -1) {
         return "I don't have area information in my records.";
       }
-      const areasSet = new Set();
+      const propertiesByArea = {};
       for (const rec of records) {
         const area = rec[headers[areaCol]];
-        if (area && String(area).trim()) {
-          areasSet.add(String(area).trim());
+        if (!area || !String(area).trim()) continue;
+        const areaKey = String(area).trim();
+        if (!propertiesByArea[areaKey]) {
+          propertiesByArea[areaKey] = [];
         }
+        const details = extractPropertyDetails(rec, headers);
+        propertiesByArea[areaKey].push(details);
       }
-      if (areasSet.size === 0) {
+
+      if (Object.keys(propertiesByArea).length === 0) {
         return "I don't have any area information listed in my records.";
       }
-      const areas = Array.from(areasSet).sort();
-      const list = areas.map((a) => `• ${a}`).join("\n");
-      return `Here are all the areas where we have properties:\n\n${list}\n\nWould you like to know which properties are in a specific area?`;
+
+      // Return structured response with area data
+      return {
+        type: "property_results",
+        message: "Here are all the areas where we have properties",
+        areas: propertiesByArea,
+        viewType: "all_properties"
+      };
     }
 
     case "properties_in_area": {
@@ -709,23 +747,31 @@ async function handleDatasetQuery(extracted) {
         return "I don't have area information in my records.";
       }
       const searchArea = String(extracted.datasetValue).toLowerCase().trim();
-      const properties = records
+      const matchedProperties = records
         .filter((rec) => {
           const area = String(rec[headers[areaCol]] || "").toLowerCase();
           return area.includes(searchArea) || searchArea.includes(area);
         })
         .map((rec) => {
-          const unit = rec["Unit #"] || "";
-          const title = rec["Title on Listing's Site"] || "";
-          const area = rec[headers[areaCol]] || "";
-          const display = unit && title ? `Unit ${unit} – ${title}` : (unit || title || "(Unnamed)");
-          return `${display} (${area})`;
+          const area = String(rec[headers[areaCol]] || "").trim();
+          const details = extractPropertyDetails(rec, headers);
+          return { area, ...details };
         });
-      if (properties.length === 0) {
+
+      if (matchedProperties.length === 0) {
         return `I don't have any properties in "${extracted.datasetValue}". Would you like to see all available areas?`;
       }
-      const list = properties.map((p) => `• ${p}`).join("\n");
-      return `Here are the properties in **${extracted.datasetValue}**:\n\n${list}`;
+
+      // Get the actual area name from first result
+      const areaName = matchedProperties[0].area;
+      
+      return {
+        type: "property_results",
+        message: `Here are the properties in **${areaName}**`,
+        properties: matchedProperties,
+        area: areaName,
+        viewType: "area_specific"
+      };
     }
 
     case "properties_near_each_other": {

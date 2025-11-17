@@ -42,12 +42,14 @@ export default function useChat() {
       // Handle both string replies and object responses
       const reply = typeof response === 'string' ? response : (response.reply || response)
       const extracted = typeof response === 'object' ? (response.extracted || null) : null
+      const structured = typeof response === 'object' ? (response.structured || null) : null
       const botMsg = { 
         id: makeId(), 
         role: 'bot', 
         text: reply, 
         timestamp: formatTime(),
-        extracted: extracted // Store extracted data for context
+        extracted: extracted, // Store extracted data for context
+        structured: structured // Store structured data for rich rendering
       }
       setMessages(prev => [...prev, botMsg])
     } catch (err) {

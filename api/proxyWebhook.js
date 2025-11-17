@@ -58,7 +58,15 @@ module.exports = async (req, res) => {
       reply = await generateGeneralReply(message);
     }
 
-    return res.status(200).json({ reply, extracted });
+    // Handle both string and structured responses
+    const isStructuredResponse = typeof reply === 'object' && reply !== null && reply.type;
+    const replyText = isStructuredResponse ? reply.message : reply;
+
+    return res.status(200).json({ 
+      reply: replyText, 
+      extracted,
+      ...(isStructuredResponse && { structured: reply })
+    });
   } catch (err) {
     console.error("proxyWebhook error:", err);
     return res.status(500).json({ error: err?.message || String(err) });

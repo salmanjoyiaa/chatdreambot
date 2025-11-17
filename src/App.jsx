@@ -6,6 +6,7 @@ import { ToastProvider } from './components/Toast'
 import TypingDots from './components/TypingDots'
 import QuickActions from './components/QuickActions'
 import PropertyCard from './components/PropertyCard'
+import PropertyResultsCard from './components/PropertyResultsCard'
 import EmptyState from './components/EmptyState'
 import useChat from './hooks/useChat'
 import useAutoScroll from './hooks/useAutoScroll'
@@ -76,7 +77,55 @@ className="mt-1 bg-white/80 dark:bg-slate-900/75 backdrop-blur-2xl rounded-2xl s
 {messages.map((m, index) => {
   const isNewMessage = index === messages.length - 1
   
-  // Check if this is a property list response
+  // Check if this is a structured property results response
+  if (m.role === 'bot' && m.structured) {
+    const { type, message: introMsg, properties, area, areas, viewType } = m.structured
+    
+    if (type === 'property_results') {
+      if (viewType === 'all_properties' && areas) {
+        // Combine all properties from all areas
+        const allProperties = [];
+        Object.entries(areas).forEach(([areaName, props]) => {
+          props.forEach(prop => {
+            allProperties.push({ ...prop, area: areaName });
+          });
+        });
+
+        return (
+          <div key={m.id}>
+            <div className="mb-4 text-sm sm:text-base text-slate-700 dark:text-slate-200 font-semibold">
+              {introMsg}
+            </div>
+            <PropertyResultsCard
+              properties={allProperties}
+              onQuickAction={(action) => {
+                sendMessage(action)
+                setCurrentIntent('property_query')
+              }}
+            />
+          </div>
+        )
+      } else if (viewType === 'area_specific' && properties) {
+        return (
+          <div key={m.id}>
+            <div className="mb-4 text-sm sm:text-base text-slate-700 dark:text-slate-200 font-semibold">
+              {introMsg}
+            </div>
+            <PropertyResultsCard
+              properties={properties}
+              area={area}
+              onQuickAction={(action) => {
+                sendMessage(action)
+                setCurrentIntent('property_query')
+              }}
+            />
+          </div>
+        )
+      }
+    }
+  }
+  
+  // Check if this is a property list response (fallback for text format)
   if (m.role === 'bot' && isPropertyList(m.text)) {
     // Split by bullet points or lines, handle both • and - bullets
     const lines = m.text.split(/\n/).filter(line => line.trim())
