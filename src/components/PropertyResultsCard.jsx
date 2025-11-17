@@ -187,19 +187,19 @@ export default function PropertyResultsCard({ properties = [], area, onQuickActi
               {onQuickAction && (
                 <div className="flex flex-wrap gap-2 pt-3 border-t border-slate-200/50 dark:border-slate-700/50">
                   <button
-                    onClick={() => onQuickAction(`What's the WiFi password at Unit ${prop.unit || prop.title}?`)}
+                    onClick={() => onQuickAction(`WiFi password for unit ${prop.unit}`)}
                     className="flex-1 min-w-[100px] px-3 py-2 text-xs font-semibold bg-slate-100/70 dark:bg-slate-700/50 hover:bg-slate-200/70 dark:hover:bg-slate-600/60 text-slate-700 dark:text-slate-200 rounded-lg transition-all duration-200 active:scale-95 border border-slate-200/50 dark:border-slate-600/50"
                   >
                     📶 WiFi
                   </button>
                   <button
-                    onClick={() => onQuickAction(`Does Unit ${prop.unit || prop.title} have parking?`)}
+                    onClick={() => onQuickAction(`Does unit ${prop.unit} have parking?`)}
                     className="flex-1 min-w-[100px] px-3 py-2 text-xs font-semibold bg-slate-100/70 dark:bg-slate-700/50 hover:bg-slate-200/70 dark:hover:bg-slate-600/60 text-slate-700 dark:text-slate-200 rounded-lg transition-all duration-200 active:scale-95 border border-slate-200/50 dark:border-slate-600/50"
                   >
                     🚗 Parking
                   </button>
                   <button
-                    onClick={() => onQuickAction(`Tell me more about Unit ${prop.unit || prop.title}`)}
+                    onClick={() => onQuickAction(`Tell me more about unit ${prop.unit}`)}
                     className="flex-1 min-w-[100px] px-3 py-2 text-xs font-semibold bg-blue-100/70 dark:bg-blue-900/30 hover:bg-blue-200/70 dark:hover:bg-blue-800/40 text-blue-700 dark:text-blue-300 rounded-lg transition-all duration-200 active:scale-95 border border-blue-200/50 dark:border-blue-700/50"
                   >
                     ℹ️ Details

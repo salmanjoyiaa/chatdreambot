@@ -173,8 +173,13 @@ function matchProperty(propertyName, rows, headers) {
     const unitRaw = row[unitIndex] || "";
     const titleRaw = row[titleIndex] || "";
     
-    // Exact match
+    // Exact match on unit or title
     if (unit === target || title === target) {
+      return { match: row, suggestions: [] };
+    }
+    
+    // Check if target is just the unit number (e.g., "1679" matches unit "1679")
+    if (target === unit || (target.match(/^\d+$/) && unit === target)) {
       return { match: row, suggestions: [] };
     }
     
