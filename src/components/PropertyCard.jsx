@@ -30,8 +30,8 @@ export default function PropertyCard({ property, onQuickAction }) {
           )}
           {info.title && (
             <h3 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100 mb-2 sm:mb-3 break-words leading-tight tracking-tight">
-              {info.title}
-            </h3>
+                {info.title}
+              </h3>
           )}
         </div>
         {info.rating && (
@@ -60,7 +60,7 @@ export default function PropertyCard({ property, onQuickAction }) {
       {onQuickAction && (
         <div className="flex flex-col sm:flex-row gap-2.5 mt-4 pt-4 border-t border-slate-200/60 dark:border-slate-700/60">
           <button
-            onClick={() => onQuickAction(`What's the WiFi password at ${info.unit ? `Unit ${info.unit}` : info.title}?`)}
+            onClick={() => onQuickAction(`What's the WiFi password of ${info.title || (info.unit || '')}?`)}
             className="flex-1 px-4 py-2.5 text-xs font-semibold bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-700/50 dark:to-slate-800/50 hover:from-slate-100 hover:to-slate-200 dark:hover:from-slate-600 dark:hover:to-slate-700 text-slate-700 dark:text-slate-200 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-95 border border-slate-200/50 dark:border-slate-600/50"
             title="📶 WiFi Info"
           >

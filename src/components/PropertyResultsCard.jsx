@@ -11,7 +11,8 @@ export default function PropertyResultsCard({ properties = [], area, onQuickActi
       // Ensure unit is just the number part
       unit: String(p.unit).split(/[^\d]/)[0] || p.unit,
       // Use address if available, otherwise fall back to title
-      displayAddress: (p.address || p.title || '').trim()
+      // Prefer the exact address from the sheet; do not show index/title by default
+      displayAddress: (p.address || '').trim()
     }))
   }, [properties])
 
@@ -129,7 +130,7 @@ export default function PropertyResultsCard({ properties = [], area, onQuickActi
 
               {/* Address/Title */}
               {prop.displayAddress && (
-                <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-50 mb-2 leading-snug">
+                <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2 leading-snug">
                   {prop.displayAddress}
                 </h4>
               )}
@@ -199,7 +200,7 @@ export default function PropertyResultsCard({ properties = [], area, onQuickActi
               {onQuickAction && (
                 <div className="flex flex-wrap gap-2 pt-3 border-t border-slate-200/30 dark:border-slate-700/30">
                   <button
-                    onClick={() => onQuickAction(`What's the WiFi password at Unit ${prop.unit}?`)}
+                    onClick={() => onQuickAction(`What's the WiFi password of ${prop.displayAddress || prop.title || (prop.unit || '')}?`) }
                     className="flex-1 min-w-[90px] px-3 py-2 text-xs font-semibold bg-blue-100/80 dark:bg-blue-900/40 hover:bg-blue-200/80 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-200 rounded transition-all duration-150 active:scale-95"
                   >
                     📶 WiFi
