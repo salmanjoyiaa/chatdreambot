@@ -154,16 +154,46 @@ className="mt-1 bg-white/80 dark:bg-slate-900/75 backdrop-blur-2xl rounded-2xl s
             </div>
           )}
           <div className="space-y-3">
-            {propertyItems.map((item, idx) => (
-              <PropertyCard
-                key={`${m.id}-${idx}`}
-                property={item.replace(/^[•\-]\s*/, '').trim()}
-                onQuickAction={(action) => {
-                  sendMessage(action)
-                  setCurrentIntent('property_query')
-                }}
-              />
-            ))}
+              {/*
+                Use the structured `PropertyResultsCard` for text-based lists as well.
+                Parse each bullet line into a small object that mimics the API record
+                so the app shows a consistent card across all query types.
+              */}
+              {(() => {
+                const parseLine = (line) => {
+                  const t = line.replace(/^[•\-]\s*/, '').trim()
+                  const unitMatch = t.match(/Unit\s+([^\n–]+?)(?:\s*–|$)/i)
+                  const unit = unitMatch?.[1]?.trim() || ''
+                  const unitNumber = unit.match(/^(\d+)/)?.[0] || ''
+                  const titleMatch = t.match(/–\s*(.+?)(?:\s*\(|$)/)
+                  const title = titleMatch?.[1]?.trim() || ''
+                  // Use the whole line as address if we don't have a discrete address
+                  const address = t
+
+                  return {
+                    unit,
+                    unitNumber,
+                    title,
+                    // propertyResultsCard will prefer `Title on Listing's Site` or `title` for marketing title
+                    'Title on Listing\'s Site': title,
+                    address,
+                    displayTitle: title,
+                    displayAddress: address,
+                  }
+                }
+
+                const parsed = propertyItems.map(item => parseLine(item))
+
+                return (
+                  <PropertyResultsCard
+                    properties={parsed}
+                    onQuickAction={(action) => {
+                      sendMessage(action)
+                      setCurrentIntent('property_query')
+                    }}
+                  />
+                )
+              })()}
           </div>
         </div>
       )
