@@ -16,7 +16,12 @@ export default async (req, res) => {
   }
 
   try {
-    const { message, properties } = req.body
+    // Handle body parsing
+    let body = req.body || {}
+    if (typeof body === 'string') {
+      body = JSON.parse(body)
+    }
+    const { message, properties } = body
 
     if (!message || typeof message !== 'string') {
       return res.status(400).json({ error: 'Missing or invalid "message" field' })
@@ -53,7 +58,7 @@ ${propertyList}`
         Authorization: `Bearer ${groqApiKey}`,
       },
       body: JSON.stringify({
-        model: 'llama3-8b-8192',
+        model: 'llama-3.1-8b-instant',
         messages: [
           {
             role: 'system',

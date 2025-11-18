@@ -16,16 +16,24 @@ export default async (req, res) => {
   }
 
   try {
-    const { messages, property } = req.body
+    const groqApiKey = process.env.GROQ_API_KEY
+    
+    // Validate API key
+    if (!groqApiKey) {
+      console.error('[/api/chat] GROQ_API_KEY not found in environment')
+      console.error('[/api/chat] Available env vars:', Object.keys(process.env).filter(k => !k.startsWith('npm_')))
+      return res.status(500).json({ error: 'LLM configuration missing (no GROQ_API_KEY)' })
+    }
+
+    // Handle body parsing
+    let body = req.body || {}
+    if (typeof body === 'string') {
+      body = JSON.parse(body)
+    }
+    const { messages, property } = body
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return res.status(400).json({ error: 'Missing or invalid "messages" array' })
-    }
-
-    const groqApiKey = process.env.GROQ_API_KEY
-    if (!groqApiKey) {
-      console.error('GROQ_API_KEY not set')
-      return res.status(500).json({ error: 'LLM configuration missing' })
     }
 
     // Build system message
@@ -70,7 +78,7 @@ This is a general conversation. The user may ask about general property manageme
         Authorization: `Bearer ${groqApiKey}`,
       },
       body: JSON.stringify({
-        model: 'llama3-8b-8192',
+        model: 'llama-3.1-8b-instant',
         messages: groqMessages,
         temperature: 0.3,
         max_tokens: 1024,

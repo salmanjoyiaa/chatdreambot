@@ -54,26 +54,35 @@ export default function useChat(userId) {
         setIsInitializing(true)
         // Get or create home conversation
         const { data: conv, error: convError } = await getOrCreateHomeConversation(userId)
-        if (!convError && conv) {
-          setConversationId(conv.id)
-          setCurrentProperty(null)
+        if (convError) {
+          console.error('Error getting home conversation:', convError)
+          throw new Error(convError)
+        }
+        if (!conv) {
+          throw new Error('Failed to create home conversation')
+        }
+        setConversationId(conv.id)
+        setCurrentProperty(null)
 
-          // Load existing messages
-          const { data: msgs, error: msgError } = await getMessages(conv.id)
-          if (!msgError) {
-            // Convert DB messages to UI format
-            const uiMessages = msgs.map((msg) => ({
-              id: msg.id,
-              role: msg.role === 'assistant' ? 'bot' : 'user',
-              text: msg.content,
-              timestamp: msg.created_at ? formatTime(new Date(msg.created_at)) : formatTime(),
-            }))
-            setMessages(uiMessages)
-          }
+        // Load existing messages
+        const { data: msgs, error: msgError } = await getMessages(conv.id)
+        if (msgError) {
+          console.error('Error loading messages:', msgError)
+          // Don't fail on message load, just start with empty
+        }
+        if (msgs && Array.isArray(msgs)) {
+          // Convert DB messages to UI format
+          const uiMessages = msgs.map((msg) => ({
+            id: msg.id,
+            role: msg.role === 'assistant' ? 'bot' : 'user',
+            text: msg.content,
+            timestamp: msg.created_at ? formatTime(new Date(msg.created_at)) : formatTime(),
+          }))
+          setMessages(uiMessages)
         }
       } catch (err) {
         console.error('Error initializing chat:', err)
-        setError('Failed to initialize chat')
+        setError(`Failed to initialize chat: ${err.message}`)
       } finally {
         setIsInitializing(false)
       }
@@ -181,27 +190,38 @@ export default function useChat(userId) {
           }),
         })
 
-        const { type, propertyId } = await detectResponse.json()
+        if (!detectResponse.ok) {
+          throw new Error(`Detection API failed: ${detectResponse.status}`)
+        }
+
+        const detectData = await detectResponse.json()
+        const { type, propertyId } = detectData
+
+        let currentConvId = conversationId
 
         // Route to appropriate conversation
         if (type === 'property' && propertyId) {
           const propertyToSwitch = properties.find((p) => p.id === propertyId)
           if (propertyToSwitch && currentProperty?.id !== propertyId) {
             await switchToProperty(propertyId)
-            // Re-add user message since conversation switched
-            setMessages((prev) => [...prev, userMsg])
-            await addMessage(conversationId, 'user', input.trim(), null)
+            // Get the new conversation ID after switching
+            const { data: newConv } = await getOrCreateConversationForProperty(userId, propertyId)
+            if (newConv) {
+              currentConvId = newConv.id
+            }
           }
         } else if (currentProperty !== null) {
           // Message is general but we're in a property conversation
           await switchToHome()
-          // Re-add user message since conversation switched
-          setMessages((prev) => [...prev, userMsg])
-          await addMessage(conversationId, 'user', input.trim(), null)
+          // Get the new conversation ID after switching
+          const { data: homeConv } = await getOrCreateHomeConversation(userId)
+          if (homeConv) {
+            currentConvId = homeConv.id
+          }
         }
 
         // Get current conversation's messages for LLM context
-        const { data: dbMessages, error: msgError } = await getMessages(conversationId)
+        const { data: dbMessages, error: msgError } = await getMessages(currentConvId)
         if (msgError) throw new Error(msgError)
 
         // Convert to LLM format
@@ -244,10 +264,10 @@ export default function useChat(userId) {
         setMessages((prev) => [...prev, botMsg])
 
         // Save assistant message to DB
-        await addMessage(conversationId, 'assistant', content, null)
+        await addMessage(currentConvId, 'assistant', content, null)
 
         // Update conversation timestamp
-        await updateConversationTimestamp(conversationId)
+        await updateConversationTimestamp(currentConvId)
       } catch (err) {
         console.error('Error sending message:', err)
         setError('Failed to send message. Please try again.')
