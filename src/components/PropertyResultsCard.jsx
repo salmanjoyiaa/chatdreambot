@@ -18,10 +18,10 @@ export default function PropertyResultsCard({ properties = [], area, onQuickActi
         unit: fullUnit, // Keep complete unit value
         unitNumber: unitNumber, // Just the number
         unitDescription: unitDescription, // The descriptive part
-        // Title on Listing's Site (marketing title)
-        displayTitle: (p.title || p['Title on Listing\'s Site'] || '').trim(),
+        // Title on Listing's Site (marketing title) - prefer the sheet value explicitly
+        displayTitle: (p['Title on Listing\'s Site'] || p.title || '').trim(),
         // Exact address from sheet
-        displayAddress: (p.address || '').trim()
+        displayAddress: (p.address || p['Address'] || '').trim()
       }
     })
   }, [properties])
@@ -147,18 +147,18 @@ export default function PropertyResultsCard({ properties = [], area, onQuickActi
                 )}
               </div>
 
-              {/* Marketing Title (Title on Listing's Site) */}
+              {/* Marketing Title (Title on Listing's Site) - shown below the Unit badge */}
               {prop.displayTitle && (
-                <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-200 mb-1 leading-snug">
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">
                   {prop.displayTitle}
-                </h4>
+                </span>
               )}
 
-              {/* Exact Address from Sheet */}
+              {/* Exact Address from Sheet - primary card title */}
               {prop.displayAddress && (
-                <p className="text-xs text-slate-600 dark:text-slate-400 mb-2 italic">
+                <h4 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 mb-1 leading-snug">
                   {prop.displayAddress}
-                </p>
+                </h4>
               )}
 
               {/* Type + Bed x Bath */}

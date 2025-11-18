@@ -13,7 +13,7 @@ export default function PropertyCard({ property, onQuickAction }) {
         unit: fullUnit,
         unitNumber,
         unitDescription,
-        title: (input.displayTitle || input.title || input['Title on Listing\'s Site'] || '').trim(),
+        title: (input['Title on Listing\'s Site'] || input.displayTitle || input.title || '').trim(),
         displayAddress: (input.displayAddress || input.address || input.Address || '').trim(),
         price: input.price || input.rate || '',
         rating: input.rating || '',
@@ -65,9 +65,14 @@ export default function PropertyCard({ property, onQuickAction }) {
               </div>
             </div>
           )}
-          {(info.title || info.displayAddress) && (
+          {info.title && (
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">
+              {info.title}
+            </span>
+          )}
+          {info.displayAddress && (
             <h3 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100 mb-2 sm:mb-3 break-words leading-tight tracking-tight">
-              {info.title || info.displayAddress}
+              {info.displayAddress}
             </h3>
           )}
         </div>

@@ -253,8 +253,10 @@ function makeRecords(rows, headers) {
 function extractPropertyDetails(record, headers) {
   const unit = record["Unit #"] || "";
   const address = record["Address"] || "";
-  // Prefer the marketing title from the sheet; fall back to address if missing
-  const title = record["Title on Listing's Site"] || record["Address"] || "";
+  // Use the marketing title from the sheet (do not fall back to the address)
+  // This keeps the sheet Address separate and allows the UI to render the
+  // marketing title under the Unit badge and the Address as a secondary line.
+  const title = record["Title on Listing's Site"] || "";
   const priceCol = findColumnIndex(headers, "Price");
   const price = priceCol !== -1 ? record[headers[priceCol]] : "";
   const typeCol = findColumnIndex(headers, "Type");
