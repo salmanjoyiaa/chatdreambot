@@ -1,12 +1,16 @@
 import DarkModeToggle from './DarkModeToggle'
 import { useAuth } from '../context/AuthContext'
 
-export default function Header({ isDark, onToggleDark, user }) {
+export default function Header({ isDark, onToggleDark, user, currentProperty }) {
   const { signOut } = useAuth()
 
   const handleLogout = async () => {
     await signOut()
   }
+
+  const contextTitle = currentProperty
+    ? `Chat for: ${currentProperty.name}`
+    : 'Home Chat – General Questions'
 
   return (
     <header className="sticky top-0 z-50 backdrop-blur-lg bg-gradient-to-r from-slate-900/95 via-slate-800/95 to-indigo-900/95 dark:from-slate-950/95 dark:via-slate-900/95 dark:to-slate-950/95 border-b border-white/5 dark:border-slate-700/20 shadow-sm">
@@ -20,7 +24,9 @@ export default function Header({ isDark, onToggleDark, user }) {
             </div>
             <div className="min-w-0 flex-1">
               <h1 className="text-white font-semibold text-base leading-tight">Property AI</h1>
-              <p className="text-xs text-blue-200/80 dark:text-blue-300/80 font-medium">Smart Assistant</p>
+              <p className="text-xs text-blue-200/80 dark:text-blue-300/80 font-medium truncate">
+                {contextTitle}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
