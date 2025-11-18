@@ -294,6 +294,21 @@ function extractPropertyDetails(record, headers) {
   };
 }
 
+// Convert rows/records into structured property details used by the UI
+function toStructuredProperties(records, headers) {
+  return records.map(rec => extractPropertyDetails(rec, headers));
+}
+
+function propertyResultsResponse(message, properties, viewType = 'dataset_results', extra = {}) {
+  return {
+    type: 'property_results',
+    message,
+    properties,
+    viewType,
+    ...extra
+  }
+}
+
 async function handlePropertyQuery(extracted) {
   const { propertyName, fieldType, informationToFind } = extracted;
 
@@ -473,8 +488,11 @@ async function handleDatasetQuery(extracted) {
       if (!result) {
         return `I couldn't find any properties for an owner like "${datasetOwnerName}".`;
       }
-      const list = result.properties.map((p) => `• ${p}`).join("\n");
-      return `Here are the properties I have for **${result.ownerName}**:\n\n${list}`;
+      // Return structured property results so UI can present them consistently
+      const filtered = filterRecordsByOwner(records, datasetOwnerName);
+      const props = filtered.map(rec => extractPropertyDetails(rec, headers));
+      const message = `Here are the properties I have for **${result.ownerName}**`;
+      return propertyResultsResponse(message, props, 'owner_specific', { ownerName: result.ownerName });
     }
 
     case "properties_with_pool": {
@@ -495,8 +513,10 @@ async function handleDatasetQuery(extracted) {
       if (properties.length === 0) {
         return "I don't have any properties with pool information listed.";
       }
-      const list = properties.map((p) => `• ${p}`).join("\n");
-      return `Here are the properties with pool/hot tub availability:\n\n${list}`;
+      const poolProperties = records
+        .filter((rec) => rec[headers[poolCol]] && String(rec[headers[poolCol]]).trim())
+        .map(rec => extractPropertyDetails(rec, headers));
+      return propertyResultsResponse("Here are the properties with pool/hot tub availability", poolProperties, 'pool_specific');
     }
 
     case "properties_without_cameras": {
@@ -517,8 +537,10 @@ async function handleDatasetQuery(extracted) {
       if (properties.length === 0) {
         return "All properties in my records have camera locations listed.";
       }
-      const list = properties.map((p) => `• ${p}`).join("\n");
-      return `Here are the properties without camera locations listed:\n\n${list}`;
+      const cameraProperties = records
+        .filter((rec) => !rec[headers[cameraCol]] || !String(rec[headers[cameraCol]]).trim())
+        .map(rec => extractPropertyDetails(rec, headers));
+      return propertyResultsResponse("Here are the properties without camera locations", cameraProperties, 'camera_filtered');
     }
 
     case "highest_rated_property": {
@@ -594,8 +616,13 @@ async function handleDatasetQuery(extracted) {
       if (properties.length === 0) {
         return `I don't have any properties listed at $${threshold} or above.`;
       }
-      const list = properties.map((p) => `• ${p}`).join("\n");
-      return `Here are properties at **$${threshold}** or above:\n\n${list}`;
+      const filteredProps = records
+        .filter((rec) => {
+          const price = parseFloat(rec[headers[priceCol]]);
+          return !isNaN(price) && price >= threshold;
+        })
+        .map(rec => extractPropertyDetails(rec, headers));
+      return propertyResultsResponse(`Here are properties at **$${threshold}** or above`, filteredProps, 'price_filtered');
     }
 
     case "properties_by_beds": {
@@ -619,8 +646,11 @@ async function handleDatasetQuery(extracted) {
       if (properties.length === 0) {
         return `I don't have any properties with "${extracted.datasetValue}" bedrooms listed.`;
       }
-      const list = properties.map((p) => `• ${p}`).join("\n");
-      return `Here are properties with **${extracted.datasetValue}** bedrooms:\n\n${list}`;
+        const props = properties
+          .map(p => matchProperty(p, rows, headers).match)
+          .filter(Boolean)
+          .map(rec => extractPropertyDetails(rec, headers));
+        return propertyResultsResponse(`Here are properties with **${extracted.datasetValue}** bedrooms`, props, 'beds_filtered');
     }
 
     case "properties_by_max_guests": {
@@ -650,8 +680,11 @@ async function handleDatasetQuery(extracted) {
       if (properties.length === 0) {
         return `I don't have any properties that sleep **${guestNum}** or more guests.`;
       }
-      const list = properties.map((p) => `• ${p}`).join("\n");
-      return `Here are properties that accommodate **${guestNum}** or more guests:\n\n${list}`;
+        const props = properties
+          .map(p => matchProperty(p, rows, headers).match)
+          .filter(Boolean)
+          .map(rec => extractPropertyDetails(rec, headers));
+        return propertyResultsResponse(`Here are properties that accommodate **${guestNum}** or more guests`, props, 'guest_filtered');
     }
 
     case "properties_with_wifi_speed_above": {
@@ -681,8 +714,11 @@ async function handleDatasetQuery(extracted) {
       if (properties.length === 0) {
         return `I don't have any properties with WiFi speed of **${threshold} Mbps** or above.`;
       }
-      const list = properties.map((p) => `• ${p}`).join("\n");
-      return `Here are properties with **${threshold} Mbps** WiFi or faster:\n\n${list}`;
+        const props = properties
+          .map(p => matchProperty(p, rows, headers).match)
+          .filter(Boolean)
+          .map(rec => extractPropertyDetails(rec, headers));
+        return propertyResultsResponse(`Here are properties with **${threshold} Mbps** WiFi or faster`, props, 'wifi_speed_filtered');
     }
 
     case "properties_by_style": {
@@ -711,8 +747,11 @@ async function handleDatasetQuery(extracted) {
       if (properties.length === 0) {
         return `I don't have any properties with "${extracted.datasetValue}" style in my records.`;
       }
-      const list = properties.map((p) => `• ${p}`).join("\n");
-      return `Here are the properties with **${extracted.datasetValue}** style:\n\n${list}`;
+        const props = properties
+          .map(p => matchProperty(p, rows, headers).match)
+          .filter(Boolean)
+          .map(rec => extractPropertyDetails(rec, headers));
+        return propertyResultsResponse(`Here are the properties with **${extracted.datasetValue}** style`, props, 'style_filtered');
     }
 
     case "properties_by_type": {
@@ -741,8 +780,11 @@ async function handleDatasetQuery(extracted) {
       if (properties.length === 0) {
         return `I don't have any properties of type "${extracted.datasetValue}" in my records.`;
       }
-      const list = properties.map((p) => `• ${p}`).join("\n");
-      return `Here are the **${extracted.datasetValue}** properties:\n\n${list}`;
+        const props = properties
+          .map(p => matchProperty(p, rows, headers).match)
+          .filter(Boolean)
+          .map(rec => extractPropertyDetails(rec, headers));
+        return propertyResultsResponse(`Here are the **${extracted.datasetValue}** properties`, props, 'type_filtered');
     }
 
     case "list_all_areas": {

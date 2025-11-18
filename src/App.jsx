@@ -122,6 +122,23 @@ className="mt-1 bg-white/80 dark:bg-slate-900/75 backdrop-blur-2xl rounded-2xl s
             />
           </div>
         )
+      } else if (properties && Array.isArray(properties)) {
+        // Generic property_results response - render with PropertyResultsCard
+        return (
+          <div key={m.id}>
+            <div className="mb-4 text-sm sm:text-base text-slate-700 dark:text-slate-200 font-semibold">
+              {introMsg}
+            </div>
+            <PropertyResultsCard
+              properties={properties}
+              area={area}
+              onQuickAction={(action) => {
+                sendMessage(action)
+                setCurrentIntent('property_query')
+              }}
+            />
+          </div>
+        )
       }
     }
   }

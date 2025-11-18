@@ -65,7 +65,7 @@ export default function PropertyCard({ property, onQuickAction }) {
               </div>
             </div>
           )}
-          {info.title && (
+          {info.title && info.title !== info.displayAddress && (
             <span className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">
               {info.title}
             </span>
