@@ -16,89 +16,129 @@ export default async (req, res) => {
   }
 
   try {
-    const groqApiKey = process.env.GROQ_API_KEY
-    
-    // Validate API key
-    if (!groqApiKey) {
-      console.error('[/api/chat] GROQ_API_KEY not found in environment')
-      console.error('[/api/chat] Available env vars:', Object.keys(process.env).filter(k => !k.startsWith('npm_')))
-      return res.status(500).json({ error: 'LLM configuration missing (no GROQ_API_KEY)' })
-    }
-
     // Handle body parsing
     let body = req.body || {}
     if (typeof body === 'string') {
       body = JSON.parse(body)
     }
-    const { messages, property } = body
+    const { messages, property, properties } = body
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return res.status(400).json({ error: 'Missing or invalid "messages" array' })
     }
 
-    // Build system message
-    let systemMessage = `You are a helpful property support assistant for a BnB management application. You help users with questions about their properties, amenities, check-in procedures, house rules, local recommendations, and general property management.
+    // We will attempt a DB-first retrieval approach: answer only from database fields
+    // If we cannot find relevant DB content we respond with a polite apology.
 
-Be friendly, professional, and concise. Provide accurate information based on the property details provided.`
+    const supabaseUrl = process.env.VITE_SUPABASE_URL
+    const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY
 
-    // If a specific property is provided, add context about it
-    if (property && property.id) {
-      systemMessage += `
-
-CURRENT PROPERTY CONTEXT:
-Property: ${property.name}
-Address: ${property.address || 'N/A'}
-Description/Details:
-${property.description || 'No additional details available'}
-
-Please use this property information when answering questions to provide relevant and specific guidance.`
-    } else {
-      systemMessage += `
-
-This is a general conversation. The user may ask about general property management topics, booking procedures, or general guidance.`
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Supabase env vars missing for DB lookup')
+      return res.status(500).json({ error: 'Database configuration missing' })
     }
 
-    // Build messages array for Groq (convert format)
-    const groqMessages = [
-      {
-        role: 'system',
-        content: systemMessage,
-      },
-      ...messages.map((msg) => ({
-        role: msg.role === 'user' ? 'user' : 'assistant',
-        content: msg.content,
-      })),
-    ]
+    // Last user message is the query to answer
+    const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user')
+    const query = (lastUserMsg && (lastUserMsg.content || lastUserMsg.text)) || ''
+    const qLower = String(query).toLowerCase().trim()
 
-    // Call Groq API
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
+    // Simple fuzzy match utility (local copy to avoid imports)
+    function levenshteinDistance(a, b) {
+      if (!a || !b) return Math.max(a?.length || 0, b?.length || 0)
+      const matrix = []
+      for (let i = 0; i <= b.length; i++) matrix[i] = [i]
+      for (let j = 0; j <= a.length; j++) matrix[0][j] = j
+      for (let i = 1; i <= b.length; i++) {
+        for (let j = 1; j <= a.length; j++) {
+          if (b.charAt(i - 1) === a.charAt(j - 1)) matrix[i][j] = matrix[i - 1][j - 1]
+          else matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1)
+        }
+      }
+      return matrix[b.length][a.length]
+    }
+
+    function similarity(a, b) {
+      if (!a || !b) return 0
+      a = a.toLowerCase().trim()
+      b = b.toLowerCase().trim()
+      if (a === b) return 1
+      if (b.includes(a) || a.includes(b)) return 0.9
+      const dist = levenshteinDistance(a, b)
+      const maxLen = Math.max(a.length, b.length)
+      return 1 - dist / Math.max(1, maxLen)
+    }
+
+    // Helper to evaluate a property record against the query
+    function scoreProperty(prop, q) {
+      const fields = [prop.name || '', prop.address || '', prop.description || '', prop.extra || '']
+      let best = 0
+      let bestField = null
+      for (const f of fields) {
+        const s = similarity(q, f)
+        if (s > best) {
+          best = s
+          bestField = f
+        }
+      }
+      return { score: best, field: bestField }
+    }
+
+    // If a property object was provided from client, check it first
+    if (property && property.id) {
+      const { name, address, description } = property
+      const combined = `${name || ''} ${address || ''} ${description || ''}`
+      const s = similarity(qLower, combined)
+      if (s > 0.5) {
+        // Return a deterministic DB-sourced answer using provided fields
+        const content = `Based on the property record for "${name}":\n\n${description || 'No additional details available.'}`
+        return res.json({ content })
+      }
+      // No matching info found in provided property
+      return res.json({ content: "Sorry — I don't have information about that in the property record." })
+    }
+
+    // Otherwise, try to query Supabase properties table for relevant matches
+    // Use Supabase REST API to fetch properties (server-side lookup)
+    const propsRes = await fetch(`${supabaseUrl.replace(/\/+$/, '')}/rest/v1/properties?select=*&order=created_at.asc&limit=300`, {
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${groqApiKey}`,
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        Accept: 'application/json',
       },
-      body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
-        messages: groqMessages,
-        temperature: 0.3,
-        max_tokens: 1024,
-      }),
     })
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Groq API error:', response.status, errorText)
-      return res.status(500).json({ error: 'Failed to generate response from LLM' })
+    if (!propsRes.ok) {
+      console.error('Failed to fetch properties from Supabase:', propsRes.status)
+      return res.status(500).json({ error: 'Failed to read from database' })
     }
 
-    const groqData = await response.json()
-    const content = groqData.choices?.[0]?.message?.content?.trim()
+    const propList = await propsRes.json()
 
-    if (!content) {
-      return res.status(500).json({ error: 'No content received from LLM' })
+    // If client sent a properties list (from frontend) prefer that smaller list for speed
+    const candidates = Array.isArray(properties) && properties.length > 0 ? properties : propList
+
+    // Score each candidate
+    let bestMatch = null
+    let bestScore = 0
+    for (const p of candidates) {
+      const { score, field } = scoreProperty(p, qLower)
+      if (score > bestScore) {
+        bestScore = score
+        bestMatch = { property: p, score, field }
+      }
     }
 
-    res.json({ content })
+    // Threshold for confident DB answer
+    if (bestMatch && bestMatch.score > 0.55) {
+      const p = bestMatch.property
+      const matchedExcerpt = bestMatch.field || p.description || p.address || p.name
+      const content = `Based on our records for "${p.name}":\n\n${matchedExcerpt}`
+      return res.json({ content })
+    }
+
+    // No DB match found — per requirement, don't hallucinate: apologize and stop
+    return res.json({ content: "Sorry — I don't have information about that." })
   } catch (error) {
     console.error('Error in chat:', error)
     res.status(500).json({ error: 'Internal server error' })

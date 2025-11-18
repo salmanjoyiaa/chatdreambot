@@ -10,6 +10,9 @@ export default function useAutoScroll(ref, deps = [], shouldScroll = true) {
     const el = ref.current
     if (!el) return
 
+    // Initialize last scroll height to current height to avoid false-positive "user scrolled up" marks
+    if (!lastScrollHeightRef.current) lastScrollHeightRef.current = el.scrollHeight
+
     // Track if user manually scrolled up
     const handleScroll = () => {
       const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 50
@@ -33,9 +36,14 @@ export default function useAutoScroll(ref, deps = [], shouldScroll = true) {
 
     // Auto-scroll logic:
     // 1. Always scroll if shouldScroll is true (new message/loading)
-    // 2. Only skip if user explicitly scrolled up AND content height increased
+    // 2. Only skip if user explicitly scrolled up AND not near bottom
     const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 150
     const shouldAutoScroll = shouldScroll && (!userScrolledUpRef.current || isNearBottom)
+
+    // If this is the first meaningful render and shouldScroll is true, force a scroll-to-bottom
+    if (!isScrollingRef.current && shouldScroll && lastScrollHeightRef.current <= el.scrollHeight && isNearBottom) {
+      // continue to the scroll block below
+    }
 
     if (shouldAutoScroll && !isScrollingRef.current) {
       isScrollingRef.current = true

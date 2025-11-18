@@ -245,6 +245,8 @@ export default function useChat(userId) {
           body: JSON.stringify({
             messages: llmMessages,
             property: propertyForLlm,
+            // send full properties list when not in a property context so server can search DB
+            properties: currentProperty ? undefined : properties,
           }),
         })
 

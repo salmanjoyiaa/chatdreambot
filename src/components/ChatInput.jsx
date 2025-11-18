@@ -115,7 +115,7 @@ export default function ChatInput({ onSend, isDark = false }) {
 
   return (
     <>
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-white/98 dark:from-slate-900/98 via-white/95 dark:via-slate-900/95 to-transparent pt-4 pb-4 sm:pb-6 border-t border-slate-200/60 dark:border-slate-700/40 backdrop-blur-xl">
+      <div className="w-full z-40 bg-gradient-to-t from-white/98 dark:from-slate-900/98 via-white/95 dark:via-slate-900/95 to-transparent pt-4 pb-4 sm:pb-6 border-t border-slate-200/60 dark:border-slate-700/40 backdrop-blur-xl">
         <div className="mx-auto w-full px-4 sm:px-6 lg:px-8 max-w-6xl">
           <div className="flex items-end gap-2 bg-white dark:bg-slate-800 rounded-2xl shadow-xl shadow-black/8 dark:shadow-black/30 hover:shadow-2xl hover:shadow-black/12 dark:hover:shadow-black/40 transition-all duration-200 p-3 sm:p-4 border border-slate-300/60 dark:border-slate-700/60 backdrop-blur-sm ring-1 ring-black/5 dark:ring-white/5">
             <textarea

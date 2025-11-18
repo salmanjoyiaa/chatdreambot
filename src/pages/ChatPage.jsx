@@ -19,6 +19,7 @@ export default function ChatPage({
 }) {
   const [activeTab, setActiveTab] = useState('home')
   const listRef = useRef(null)
+  const [showSidebar, setShowSidebar] = useState(false)
 
   useAutoScroll(listRef, [messages, isLoading], isLoading || messages.length > 0)
 
@@ -44,7 +45,7 @@ export default function ChatPage({
   return (
     <div className="flex-1 flex flex-col lg:flex-row gap-4 sm:gap-6 relative z-10">
       {/* Sidebar with tabs */}
-      <aside className="w-full lg:w-64 flex-shrink-0">
+      <aside className={`${showSidebar ? 'block' : 'hidden'} lg:block w-full lg:w-64 flex-shrink-0`}>
         <div className="h-full bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-slate-700/30 shadow-sm p-3 sm:p-4 overflow-y-auto">
           <div className="space-y-2">
             {/* Home Tab */}
@@ -106,12 +107,26 @@ export default function ChatPage({
         </div>
       </aside>
 
+      {/* Mobile: small toggle to show sidebar */}
+      <div className="lg:hidden absolute top-4 left-4 z-30">
+        <button
+          onClick={() => setShowSidebar((s) => !s)}
+          className="p-2 rounded-lg bg-white/90 dark:bg-slate-800/80 shadow-md border border-slate-200/60 dark:border-slate-700/40"
+          aria-expanded={showSidebar}
+          aria-controls="sidebar"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" />
+          </svg>
+        </button>
+      </div>
+
       {/* Main chat area */}
       <main className="flex-1 flex flex-col min-h-0">
         {/* Chat messages container */}
         <div
           ref={listRef}
-          className="flex-1 bg-white/80 dark:bg-slate-900/75 backdrop-blur-2xl rounded-2xl shadow-md p-4 sm:p-6 overflow-y-auto border border-white/10 dark:border-slate-700/40 scroll-smooth will-change-scroll ring-1 ring-black/5 dark:ring-white/5"
+          className="flex-1 bg-white/80 dark:bg-slate-900/75 backdrop-blur-2xl rounded-2xl shadow-md p-4 sm:p-6 overflow-y-auto border border-white/10 dark:border-slate-700/40 scroll-smooth will-change-scroll ring-1 ring-black/5 dark:ring-white/5 pb-36"
         >
           <div className="space-y-4" role="log" aria-live="polite" aria-atomic="false">
             {messages.length === 0 && !isLoading && <EmptyState onSelect={sendMessage} />}
@@ -151,7 +166,7 @@ export default function ChatPage({
         </div>
 
         {/* Chat input */}
-        <div className="mt-4">
+        <div className="sticky bottom-4 z-20 mt-4">
           <ChatInput onSend={sendMessage} isDark={isDark} />
         </div>
       </main>
